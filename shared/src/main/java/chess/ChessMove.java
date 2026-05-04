@@ -29,7 +29,7 @@ public class ChessMove {
     }
 
 
-    public ChessPosition getStartPosition(){
+    public ChessPosition getStartPosition() {
         return startPosition;
     }
 
@@ -37,8 +37,7 @@ public class ChessMove {
         return endPosition;
     }
 
-    public ChessPiece.PieceType getPromotionPiece(){
+    public ChessPiece.PieceType getPromotionPiece() {
         return promotionPiece;
     }
-
 }

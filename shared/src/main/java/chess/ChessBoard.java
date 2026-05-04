@@ -19,29 +19,30 @@ public class ChessBoard {
     }
 
     private final ChessPiece[][] chessBoard = new ChessPiece[8][8];
+
     public ChessBoard() {
-        
+
     }
 
-    public void addPiece(ChessPosition position, ChessPiece piece){
+    public void addPiece(ChessPosition position, ChessPiece piece) {
         chessBoard[position.getRow() - 1][position.getColumn() - 1] = piece;
     }
 
-    public ChessPiece getPiece(ChessPosition position){
+    public ChessPiece getPiece(ChessPosition position) {
         return chessBoard[position.getRow() - 1][position.getColumn() - 1];
     }
 
-    public void resetBoard(){
+    public void resetBoard() {
 
-        //Empty chess board
-        for (int r = 1; r <= 8; r++){
-            for (int c = 1; c <= 8; c++){
-                addPiece(new ChessPosition(r, c),null);
+        // Empty chess board
+        for (int r = 1; r <= 8; r++) {
+            for (int c = 1; c <= 8; c++) {
+                addPiece(new ChessPosition(r, c), null);
             }
         }
 
         // reset pawn
-        for (int col = 1; col <= 8; col++){
+        for (int col = 1; col <= 8; col++) {
             addPiece(new ChessPosition(2, col), new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.PAWN));
             addPiece(new ChessPosition(7, col), new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.PAWN));
         }
@@ -56,7 +57,7 @@ public class ChessBoard {
         addPiece(new ChessPosition(1, 7), new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.KNIGHT));
         addPiece(new ChessPosition(1, 8), new ChessPiece(ChessGame.TeamColor.WHITE, ChessPiece.PieceType.ROOK));
 
-        //reset Black Row 8
+        // reset Black Row 8
         addPiece(new ChessPosition(8, 1), new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.ROOK));
         addPiece(new ChessPosition(8, 2), new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.KNIGHT));
         addPiece(new ChessPosition(8, 3), new ChessPiece(ChessGame.TeamColor.BLACK, ChessPiece.PieceType.BISHOP));
