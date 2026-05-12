@@ -105,6 +105,12 @@ public class ChessGame {
         }
 
         applyMove(board, move);
+
+        if (teamTurn == TeamColor.WHITE) {
+            teamTurn = TeamColor.BLACK;
+        } else {
+            teamTurn = TeamColor.WHITE;
+        }
     }
 
     public boolean isInCheck(TeamColor teamColor) {
