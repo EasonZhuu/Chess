@@ -161,7 +161,10 @@ public class ChessGame {
     }
 
     public boolean isInCheckmate(TeamColor teamColor) {
-        throw new RuntimeException("Not implemented");
+        if (!isInCheck(teamColor)) {
+            return false;
+        }
+        return true;
     }
 
     public boolean isInStalemate(TeamColor teamColor) {
