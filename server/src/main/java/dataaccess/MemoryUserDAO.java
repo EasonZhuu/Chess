@@ -1,5 +1,34 @@
 package dataaccess;
 
-public class MemoryUserDAO implements UserDAO{
+import model.UserData;
 
+import java.util.HashMap;
+import java.util.Map;
+
+public class MemoryUserDAO implements UserDAO{
+    private Map<String, UserData> users = new HashMap<>();
+
+    @Override
+    public void createUser(UserData user) throws DataAccessException{
+        if (user == null || user.username() == null || user.password() == null || user.email() == null){
+            throw new DataAccessException("Error: bad request");
+        }
+        if (users.containsKey(user.username())){
+            throw new DataAccessException("Error: already taken");
+        }
+        users.put(user.username(), user);
+    }
+
+    @Override
+    public UserData getUser(String username) throws DataAccessException{
+        if (username == null) {
+            return null;
+        }
+        return users.get(username);
+    }
+
+    @Override
+    public void clear() throws DataAccessException{
+        users.clear();
+    }
 }
