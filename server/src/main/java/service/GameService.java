@@ -29,4 +29,20 @@ public class GameService {
             throw new ServiceException(500, "Error: " + ex.getMessage());
         }
     }
+
+    public ListGamesResult listGames(ListGamesRequest request) throws ServiceException {
+        if (request == null || request.authToken() == null || request.authToken().isBlank()) {
+            throw new ServiceException(401, "Error: unauthorized");
+        }
+
+        try {
+            if (authDAO.getAuth(request.authToken()) == null) {
+                throw new ServiceException(401, "Error: unauthorized");
+            }
+
+            return new ListGamesResult(gameDAO.listGames());
+        } catch (DataAccessException ex) {
+            throw new ServiceException(500, "Error: " + ex.getMessage());
+        }
+    }
 }
