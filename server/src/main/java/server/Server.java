@@ -1,8 +1,6 @@
 package server;
 
-import handler.LoginHandler;
-import handler.LogoutHandler;
-import handler.RegisterHandler;
+import handler.*;
 import io.javalin.*;
 import dataaccess.AuthDAO;
 import dataaccess.GameDAO;
@@ -11,10 +9,10 @@ import dataaccess.MemoryClearDAO;
 import dataaccess.MemoryGameDAO;
 import dataaccess.MemoryUserDAO;
 import dataaccess.UserDAO;
-import handler.ClearHandler;
 import io.javalin.Javalin;
 import io.javalin.json.JavalinGson;
 import service.ClearService;
+import service.GameService;
 import service.UserService;
 
 
@@ -48,6 +46,10 @@ public class Server {
 
         LogoutHandler logoutHandler = new LogoutHandler(userService);
         javalin.delete("/session", ctx -> logoutHandler.logout(ctx));
+
+        GameService gameService = new GameService(authDAO, gameDAO);
+        CreateGameHandler createGameHandler = new CreateGameHandler(gameService);
+        javalin.post("/game", ctx -> createGameHandler.createGame(ctx));
     }
 
     public int run(int desiredPort) {
