@@ -1,5 +1,7 @@
 package server;
 
+import handler.LoginHandler;
+import handler.LogoutHandler;
 import handler.RegisterHandler;
 import io.javalin.*;
 import dataaccess.AuthDAO;
@@ -14,6 +16,8 @@ import io.javalin.Javalin;
 import io.javalin.json.JavalinGson;
 import service.ClearService;
 import service.UserService;
+
+
 
 
 public class Server {
@@ -39,7 +43,11 @@ public class Server {
         RegisterHandler registerHandler = new RegisterHandler(userService);
         javalin.post("/user", ctx -> registerHandler.register(ctx));
 
+        LoginHandler loginHandler = new LoginHandler(userService);
+        javalin.post("/session", ctx -> loginHandler.login(ctx));
 
+        LogoutHandler logoutHandler = new LogoutHandler(userService);
+        javalin.delete("/session", ctx -> logoutHandler.logout(ctx));
     }
 
     public int run(int desiredPort) {

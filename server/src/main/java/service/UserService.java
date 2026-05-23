@@ -50,7 +50,28 @@ public class UserService {
 
             String authToken = UUID.randomUUID().toString();
             authDAO.createAuth(new AuthData(authToken, loginRequest.username()));
-            
+
+            return new LoginResult(loginRequest.username(), authToken);
+        } catch (DataAccessException ex){
+            throw new ServiceException(500, "Error: " + ex.getMessage());
         }
+    }
+
+    public LogoutResult logout(LogoutRequest request) throws ServiceException{
+        if (request == null || request.authToken() == null ||request.authToken().isBlank()){
+            throw new ServiceException(401, "Error: unauthorized");
+        }
+
+        try{
+            if (authDAO.getAuth(request.authToken()) == null){
+                throw new ServiceException(401, "Error: unauthorized");
+            }
+
+            authDAO.deleteAuth(request.authToken());
+            return new LogoutResult();
+        } catch (DataAccessException ex){
+            throw new ServiceException(500, "Error: " + ex.getMessage());
+        }
+
     }
 }
