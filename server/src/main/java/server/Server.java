@@ -10,6 +10,7 @@ import dataaccess.MemoryUserDAO;
 import dataaccess.UserDAO;
 import handler.ClearHandler;
 import io.javalin.Javalin;
+import io.javalin.json.JavalinGson;
 import service.ClearService;
 
 public class Server {
@@ -17,7 +18,10 @@ public class Server {
     private final Javalin javalin;
 
     public Server() {
-        javalin = Javalin.create(config -> config.staticFiles.add("web"));
+        javalin = Javalin.create(config -> {
+            config.staticFiles.add("web");
+            config.jsonMapper(new JavalinGson());
+        });
 
         UserDAO userDAO = new MemoryUserDAO();
         AuthDAO authDAO = new MemoryAuthDAO();
