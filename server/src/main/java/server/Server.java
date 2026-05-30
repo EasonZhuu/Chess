@@ -1,20 +1,15 @@
 package server;
 
+import dataaccess.*;
 import handler.*;
 import io.javalin.*;
-import dataaccess.AuthDAO;
-import dataaccess.GameDAO;
-import dataaccess.MemoryAuthDAO;
-import dataaccess.MemoryClearDAO;
-import dataaccess.MemoryGameDAO;
-import dataaccess.MemoryUserDAO;
-import dataaccess.UserDAO;
 import io.javalin.Javalin;
 import io.javalin.json.JavalinGson;
 import service.ClearService;
 import service.GameService;
 import service.UserService;
-
+import dataaccess.MySqlDatabaseInitializer;
+import dataaccess.DataAccessException;
 
 
 
@@ -27,6 +22,12 @@ public class Server {
             config.staticFiles.add("web");
             config.jsonMapper(new JavalinGson());
         });
+
+        try {
+            MySqlDatabaseInitializer.configureDatabase();
+        } catch (DataAccessException ex) {
+            throw new RuntimeException("Unable to configure database", ex);
+        }
 
         UserDAO userDAO = new MemoryUserDAO();
         AuthDAO authDAO = new MemoryAuthDAO();
