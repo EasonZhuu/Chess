@@ -53,7 +53,7 @@ public class MySqlUserDAO implements UserDAO{
 
     @Override
     public void clear() throws DataAccessException {
-        var statement = "TRUNCATE TABLE users";
+        var statement = "DELETE FROM users";
         try (var conn = DatabaseManager.getConnection();
             var preparedStatement = conn.prepareStatement(statement)){
             preparedStatement.executeUpdate();

@@ -29,9 +29,9 @@ public class Server {
             throw new RuntimeException("Unable to configure database", ex);
         }
 
-        UserDAO userDAO = new MemoryUserDAO();
-        AuthDAO authDAO = new MemoryAuthDAO();
-        GameDAO gameDAO = new MemoryGameDAO();
+        UserDAO userDAO = new MySqlUserDAO();
+        AuthDAO authDAO = new MySqlAuthDAO();
+        GameDAO gameDAO = new MySqlGameDAO();
 
         MemoryClearDAO clearDAO = new MemoryClearDAO(userDAO, authDAO, gameDAO);
         ClearService clearService = new ClearService(clearDAO);

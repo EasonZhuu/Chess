@@ -67,17 +67,62 @@ public class MySqlGameDAO implements GameDAO{
 
     @Override
     public Collection<GameData> listGames() throws DataAccessException {
-        return List.of();
+        var statement = "SELECT game_id, white_username, black_username, game_name, game_json FROM games";
+        var games = new java.util.ArrayList<GameData>();
+
+        try (var conn = DatabaseManager.getConnection();
+             var preparedStatement = conn.prepareStatement(statement);
+             var rs = preparedStatement.executeQuery()) {
+            while (rs.next()) {
+                var json = rs.getString("game_json");
+                var game = new com.google.gson.Gson().fromJson(json, chess.ChessGame.class);
+                games.add(new GameData(
+                        rs.getInt("game_id"),
+                        rs.getString("white_username"),
+                        rs.getString("black_username"),
+                        rs.getString("game_name"),
+                        game));
+            }
+            return games;
+        } catch (SQLException ex) {
+            throw new DataAccessException("failed to list games", ex);
+        }
     }
 
     @Override
     public void updateGame(GameData game) throws DataAccessException {
+        if (game == null || game.gameID() < 1) {
+            throw new DataAccessException("Error: bad request");
+        }
 
+        var statement = """
+                UPDATE games
+                SET white_username = ?, black_username = ?, game_name = ?, game_json = ?
+                WHERE game_id = ?
+                """;
+
+        var json = new com.google.gson.Gson().toJson(game.game());
+
+        try (var conn = DatabaseManager.getConnection();
+             var preparedStatement = conn.prepareStatement(statement)) {
+            preparedStatement.setString(1, game.whiteUsername());
+            preparedStatement.setString(2, game.blackUsername());
+            preparedStatement.setString(3, game.gameName());
+            preparedStatement.setString(4, json);
+            preparedStatement.setInt(5, game.gameID());
+
+            var rows = preparedStatement.executeUpdate();
+            if (rows == 0) {
+                throw new DataAccessException("Error: bad request");
+            }
+        } catch (SQLException ex){
+            throw new DataAccessException("failed to update game", ex);
+        }
     }
 
     @Override
     public void clear() throws DataAccessException {
-        var statement = "TRUNCATE TABLE games";
+        var statement = "DELETE FROM games";
         try (var conn = DatabaseManager.getConnection();
              var preparedStatement = conn.prepareStatement(statement)){
             preparedStatement.executeUpdate();
