@@ -31,7 +31,7 @@ public class Server {
 
         UserDAO userDAO = new MySqlUserDAO();
         AuthDAO authDAO = new MySqlAuthDAO();
-        GameDAO gameDAO = new MySqlGameDAO();
+        GameDAO gameDAO = new MySqlGameDAO(); 
 
         MemoryClearDAO clearDAO = new MemoryClearDAO(userDAO, authDAO, gameDAO);
         ClearService clearService = new ClearService(clearDAO);
