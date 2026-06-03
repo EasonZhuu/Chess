@@ -1,5 +1,6 @@
 package client;
 
+import model.AuthData;
 import model.GameData;
 
 import java.net.URI;
@@ -24,9 +25,25 @@ public class ServerFacade {
         serverUrl = "http://localhost:" + port;
     }
 
+    public void clear() throws ResponseException{
+        var request = buildRequest("DELETE", "/db", null, null);
+        var response = sendRequest(request);
+        handleResponse(response, null);
+    }
 
+    public AuthData register(String username, String password, String email) throws ResponseException {
+        var body = new RegisterRequest(username, password, email);
+        var request = buildRequest("POST", "/user", body, null);
+        var response = sendRequest(request);
+        return handleResponse(response, AuthData.class);
+    }
 
-
+    public  AuthData login(String username, String password) throws ResponseException {
+        var body = new LoginRequest(username, password);
+        var request = buildRequest("POST", "/session", body, null);
+        var response = sendRequest(request);
+        return handleResponse(response, AuthData.class);
+    }
 
 
 
