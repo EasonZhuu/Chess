@@ -38,14 +38,40 @@ public class ServerFacade {
         return handleResponse(response, AuthData.class);
     }
 
-    public  AuthData login(String username, String password) throws ResponseException {
+    public AuthData login(String username, String password) throws ResponseException {
         var body = new LoginRequest(username, password);
         var request = buildRequest("POST", "/session", body, null);
         var response = sendRequest(request);
         return handleResponse(response, AuthData.class);
     }
 
+    public void logout(String authToken) throws ResponseException {
+        var request = buildRequest("DELETE", "/session", null, authToken);
+        var response = sendRequest(request);
+        handleResponse(response, null);
+    }
 
+    public int createGame(String authToken, String gameName) throws ResponseException {
+        var body = new CreateGameRequest(gameName);
+        var request = buildRequest("POST", "/game", body, authToken);
+        var response = sendRequest(request);
+        var result = handleResponse(response, CreateGameResult.class);
+        return result.gameID();
+    }
+
+    public Collection<GameData> listGames(String authToken) throws ResponseException {
+        var request = buildRequest("GET", "/game", null, authToken);
+        var response = sendRequest(request);
+        var result = handleResponse(response, ListGamesResult.class);
+        return result.games();
+    }
+
+    public void joinGame(String authToken, String playerColor, int gameID) throws ResponseException {
+        var body = new JoinGameRequest(playerColor, gameID);
+        var request = buildRequest("PUT", "/game", body, authToken);
+        var response = sendRequest(request);
+        handleResponse(response, null);
+    }
 
     private HttpRequest buildRequest(String method, String path, Object body, String authToken){
         var request = HttpRequest.newBuilder().uri(URI.create(serverUrl + path)).method(method, makeRequestBody(body));
@@ -70,8 +96,14 @@ public class ServerFacade {
 
     private <T> T handleResponse(HttpResponse<String> response, Class<T> responseClass) throws ResponseException {
         if (! isSuccessful(response.statusCode())) {
-            var errorResponse = gson.fromJson(response.body(), ErrorResponse.class);
-            throw new ResponseException(errorResponse.message());
+            var message = "Error: request failed";
+            if (response.body() != null && !response.body().isBlank()) {
+                var errorResponse = gson.fromJson(response.body(), ErrorResponse.class);
+                if (errorResponse != null && errorResponse.message() != null) {
+                    message = errorResponse.message();
+                }
+            }
+            throw new ResponseException(message);
         }
 
         if (responseClass == null) {
