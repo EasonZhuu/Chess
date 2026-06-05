@@ -221,10 +221,6 @@ public class Repl {
         }
     }
 
-
-
-
-
     private String prompt() {
         if (loggedIn) {
             return "[LOGGED_IN] >>> ";
