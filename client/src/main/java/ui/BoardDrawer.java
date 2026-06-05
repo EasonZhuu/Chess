@@ -10,29 +10,44 @@ public class BoardDrawer {
     public static String drawBoard(ChessBoard board, ChessGame.TeamColor perspective) {
         StringBuilder result = new StringBuilder();
 
-        appendColumnLabels(result);
+        int[] rows;
+        int[] cols;
 
-        for (int row = 8; row > 0; row--) {
-            appendRow(result, board, row);
+        if (perspective == ChessGame.TeamColor.BLACK) {
+            rows = new int[]{1, 2, 3, 4, 5, 6, 7, 8};
+            cols = new int[]{8, 7, 6, 5, 4, 3, 2, 1};
+        } else {
+            rows = new int[]{8, 7, 6, 5, 4, 3, 2, 1};
+            cols = new int[]{1, 2, 3, 4, 5, 6, 7, 8};
         }
 
-        appendColumnLabels(result);
+        appendColumnLabels(result, perspective);
+
+        for (int row : rows) {
+            appendRow(result, board, row, cols);
+        }
+
+        appendColumnLabels(result, perspective);
 
         return  result.toString();
     }
 
-    public static void appendColumnLabels(StringBuilder result) {
+    public static void appendColumnLabels(StringBuilder result, ChessGame.TeamColor perspective) {
         result.append(EscapeSequences.SET_TEXT_COLOR_WHITE);
-        result.append("    a  b  c  d  e  f  g  h\n");
+        if (perspective == ChessGame.TeamColor.BLACK) {
+            result.append("    h  g  f  e  d  c  b  a\n");
+        } else {
+            result.append("    a  b  c  d  e  f  g  h\n");
+        }
         result.append(EscapeSequences.RESET_TEXT_COLOR);
     }
 
-    public static void appendRow(StringBuilder result, ChessBoard board, int row) {
+    public static void appendRow(StringBuilder result, ChessBoard board, int row, int[] cols) {
         result.append(EscapeSequences.SET_TEXT_COLOR_WHITE);
         result.append(" ").append(row).append(" ");
         result.append(EscapeSequences.RESET_TEXT_COLOR);
 
-        for (int col = 1; col <= 8; col++) {
+        for (int col : cols) {
             ChessPiece piece = board.getPiece(new ChessPosition(row, col));
 
             if ((row + col) % 2 == 1) {
