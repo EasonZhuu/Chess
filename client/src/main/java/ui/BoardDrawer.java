@@ -53,7 +53,7 @@ public class BoardDrawer {
             if ((row + col) % 2 == 1) {
                 result.append(EscapeSequences.SET_BG_COLOR_LIGHT_GREY);
             } else {
-                result.append(EscapeSequences.SET_BG_COLOR_GREEN);
+                result.append(EscapeSequences.SET_BG_COLOR_WHITE);
             }
 
             if (piece == null) {
