@@ -2,6 +2,7 @@ package websocket;
 
 import com.google.gson.Gson;
 import dataaccess.AuthDAO;
+import dataaccess.DataAccessException;
 import dataaccess.GameDAO;
 import io.javalin.websocket.WsCloseContext;
 import io.javalin.websocket.WsCloseHandler;
@@ -9,9 +10,13 @@ import io.javalin.websocket.WsConnectContext;
 import io.javalin.websocket.WsConnectHandler;
 import io.javalin.websocket.WsMessageContext;
 import io.javalin.websocket.WsMessageHandler;
+import model.AuthData;
+import model.GameData;
 import org.eclipse.jetty.websocket.api.Session;
 import websocket.commands.UserGameCommand;
 import websocket.messages.ErrorMessage;
+import websocket.messages.LoadGameMessage;
+import websocket.messages.NotificationMessage;
 
 import java.io.IOException;
 
@@ -60,7 +65,53 @@ public class WsRequestHandler implements WsConnectHandler, WsMessageHandler, WsC
     }
 
     private void connect(UserGameCommand command, Session session) throws IOException {
-        sendError(session, "Error: CONNECT is not implemented yet");
+        if (command.getGameID() == null) {
+            sendError(session, "Error: missing game ID");
+            return;
+        }
+
+        AuthData authData;
+        GameData gameData;
+
+        try {
+            authData = authDAO.getAuth(command.getAuthToken());
+            gameData = gameDAO.getGame(command.getGameID());
+        } catch (DataAccessException ex) {
+            sendError(session, "Error: unable to connect to game");
+            return;
+        }
+
+        if (authData == null) {
+            sendError(session, "Error: invalid auth token");
+            return;
+        }
+
+        if (gameData == null) {
+            sendError(session, "Error: invalid game ID");
+            return;
+        }
+
+        String username = authData.username();
+        String role = "observer";
+
+        if (username.equals(gameData.whiteUsername())) {
+            role = "WHITE";
+        } else if (username.equals(gameData.blackUsername())) {
+            role = "BLACK";
+        }
+
+        connections.add(command.getGameID(), username, session);
+
+        connections.send(session, new LoadGameMessage(gameData));
+
+        String notification;
+        if (role.equals("observer")) {
+            notification = username + " joined as an observer";
+        } else {
+            notification = username + " joined as " + role;
+        }
+
+        connections.broadcastExcept(command.getGameID(), username, new NotificationMessage(notification));
     }
 
     private void makeMove(UserGameCommand command, Session session) throws IOException {
