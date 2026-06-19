@@ -10,6 +10,7 @@ import service.GameService;
 import service.UserService;
 import dataaccess.MySqlDatabaseInitializer;
 import dataaccess.DataAccessException;
+import websocket.WsRequestHandler;
 
 
 
@@ -31,7 +32,14 @@ public class Server {
 
         UserDAO userDAO = new MySqlUserDAO();
         AuthDAO authDAO = new MySqlAuthDAO();
-        GameDAO gameDAO = new MySqlGameDAO(); 
+        GameDAO gameDAO = new MySqlGameDAO();
+
+        WsRequestHandler wsHandler = new WsRequestHandler(authDAO, gameDAO);
+        javalin.ws("/ws", ws -> {
+            ws.onConnect(wsHandler);
+            ws.onMessage(wsHandler);
+            ws.onClose(wsHandler);
+        });
 
         MemoryClearDAO clearDAO = new MemoryClearDAO(userDAO, authDAO, gameDAO);
         ClearService clearService = new ClearService(clearDAO);
