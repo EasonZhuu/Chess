@@ -264,6 +264,8 @@ public class Repl implements ServerMessageObserver {
             leaveGame();
         } else if (command.toLowerCase().startsWith("move ")) {
             makeMove(command);
+        } else if (command.equalsIgnoreCase("resign")) {
+            resignGame();
         } else {
             System.out.println("Unknown command. Type help to see possible commands.");
         }
@@ -385,6 +387,32 @@ public class Repl implements ServerMessageObserver {
         return null;
     }
 
+    private void resignGame() {
+        if (currentPlayerColor == null) {
+            System.out.println("Observers cannot resign.");
+            return;
+        }
+
+        if (webSocket == null || currentGameID == null) {
+            System.out.println("No active game.");
+            return;
+        }
+
+        System.out.print("Are you sure you want to resign? Type yes to confirm: ");
+        String answer = scanner.nextLine().trim();
+
+        if (!answer.equalsIgnoreCase("yes")) {
+            System.out.println("Resign cancelled.");
+            return;
+        }
+
+        try {
+            webSocket.resign(authToken, currentGameID);
+        } catch (ResponseException ex) {
+            System.out.println(ex.getMessage());
+        }
+    }
+
     private void clearGameState() {
         webSocket = null;
         currentGame = null;
@@ -454,6 +482,7 @@ public class Repl implements ServerMessageObserver {
                 redraw - the chess board
                 move e2 e4 - to move a piece
                 move e7 e8 queen - to move with promotion
+                resign - forfeit the game
                 leave - the current game
                 help - with possible commands
                 """;
