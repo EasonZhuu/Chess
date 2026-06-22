@@ -5,9 +5,17 @@ import chess.ChessGame;
 import chess.ChessPiece;
 import chess.ChessPosition;
 
+import java.util.Collection;
+
 public class BoardDrawer {
 
     public static String drawBoard(ChessBoard board, ChessGame.TeamColor perspective) {
+        return drawBoard(board, perspective, null, null);
+    }
+
+    public static String drawBoard(ChessBoard board, ChessGame.TeamColor perspective,
+                                   ChessPosition selectedPosition,
+                                   Collection<ChessPosition> highlightedPositions) {
         StringBuilder result = new StringBuilder();
 
         int[] rows;
@@ -24,7 +32,7 @@ public class BoardDrawer {
         appendColumnLabels(result, perspective);
 
         for (int row : rows) {
-            appendRow(result, board, row, cols);
+            appendRow(result, board, row, cols, selectedPosition, highlightedPositions);
         }
 
         appendColumnLabels(result, perspective);
@@ -43,14 +51,25 @@ public class BoardDrawer {
     }
 
     public static void appendRow(StringBuilder result, ChessBoard board, int row, int[] cols) {
+        appendRow(result, board, row, cols, null, null);
+    }
+
+    public static void appendRow(StringBuilder result, ChessBoard board, int row, int[] cols,
+                                 ChessPosition selectedPosition,
+                                 Collection<ChessPosition> highlightedPositions) {
         result.append(EscapeSequences.SET_TEXT_COLOR_WHITE);
         result.append(" ").append(row).append(" ");
         result.append(EscapeSequences.RESET_TEXT_COLOR);
 
         for (int col : cols) {
-            ChessPiece piece = board.getPiece(new ChessPosition(row, col));
+            ChessPosition position = new ChessPosition(row, col);
+            ChessPiece piece = board.getPiece(position);
 
-            if ((row + col) % 2 == 1) {
+            if (selectedPosition != null && selectedPosition.equals(position)) {
+                result.append(EscapeSequences.SET_BG_COLOR_YELLOW);
+            } else if (containsPosition(highlightedPositions, position)) {
+                result.append(EscapeSequences.SET_BG_COLOR_GREEN);
+            } else if ((row + col) % 2 == 1) {
                 result.append(EscapeSequences.SET_BG_COLOR_LIGHT_GREY);
             } else {
                 result.append(EscapeSequences.SET_BG_COLOR_WHITE);
@@ -72,6 +91,20 @@ public class BoardDrawer {
         result.append(EscapeSequences.SET_TEXT_COLOR_WHITE);
         result.append(" ").append(row).append(" \n");
         result.append(EscapeSequences.RESET_TEXT_COLOR);
+    }
+
+    private static boolean containsPosition(Collection<ChessPosition> positions, ChessPosition position) {
+        if (positions == null) {
+            return false;
+        }
+
+        for (ChessPosition currentPosition : positions) {
+            if (currentPosition.equals(position)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static String pieceSymbol(ChessPiece piece) {
