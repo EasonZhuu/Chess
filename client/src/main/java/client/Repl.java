@@ -8,13 +8,18 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Scanner;
 
-public class Repl {
+public class Repl implements ServerMessageObserver {
     private boolean loggedIn = false;
+    private boolean inGame = false;
     private final Scanner scanner = new Scanner(System.in);
     private final ServerFacade facade = new ServerFacade(8080);
     private String authToken;
     private String username;
     private ArrayList<GameData> currentGames = new ArrayList<>();
+    private WebSocketFacade webSocket;
+    private GameData currentGame;
+    private Integer currentGameID;
+    private ChessGame.TeamColor currentPerspective;
 
 
     public void run() {
@@ -24,11 +29,16 @@ public class Repl {
             String command = scanner.nextLine().trim();
 
             if (command.equalsIgnoreCase("quit")) {
+                if (webSocket != null) {
+                    webSocket.close();
+                }
                 System.out.println("Goodbye");
                 return;
             }
 
-            if (command.equalsIgnoreCase("help")) {
+            if (inGame) {
+                handleGameplayCommand(command);
+            } else if (command.equalsIgnoreCase("help")) {
                 System.out.println(help());
             } else if (command.equalsIgnoreCase("register") && !loggedIn) {
                 register();
@@ -183,14 +193,21 @@ public class Repl {
             int gameID = game.gameID();
             facade.joinGame(authToken, color, gameID);
 
-            var gameBoard = game.game().getBoard();
-            ChessGame.TeamColor perspective;
+            currentGameID = gameID;
+
             if (color.equals("BLACK")) {
-                perspective = ChessGame.TeamColor.BLACK;
+                currentPerspective = ChessGame.TeamColor.BLACK;
             } else {
-                perspective = ChessGame.TeamColor.WHITE;
+                currentPerspective = ChessGame.TeamColor.WHITE;
             }
-            System.out.println(BoardDrawer.drawBoard(gameBoard, perspective));
+
+            if (webSocket != null) {
+                webSocket.close();
+            }
+
+            webSocket = new WebSocketFacade(8080, this);
+            webSocket.connect(authToken, gameID);
+            inGame = true;
         } catch (NumberFormatException ex) {
             System.out.println("Game number must be a number.");
         } catch (ResponseException ex) {
@@ -214,15 +231,101 @@ public class Repl {
             }
 
             GameData game = currentGames.get(gameNumber - 1);
-            var gameBoard = game.game().getBoard();
-            System.out.println(BoardDrawer.drawBoard(gameBoard, ChessGame.TeamColor.WHITE));
+            currentGameID = game.gameID();
+            currentPerspective = ChessGame.TeamColor.WHITE;
+
+            if (webSocket != null) {
+                webSocket.close();
+            }
+
+            webSocket = new WebSocketFacade(8080, this);
+            webSocket.connect(authToken, currentGameID);
+            inGame = true;
         } catch (NumberFormatException ex) {
             System.out.println("Game number must be a number.");
+        } catch (ResponseException ex) {
+            System.out.println(ex.getMessage());
         }
     }
 
+    private void handleGameplayCommand(String command) {
+        if (command.equalsIgnoreCase("help")) {
+            System.out.println(gameplayHelp());
+        } else if (command.equalsIgnoreCase("redraw")) {
+            redrawGame();
+        } else if (command.equalsIgnoreCase("leave")) {
+            leaveGame();
+        } else {
+            System.out.println("Unknown command. Type help to see possible commands.");
+        }
+    }
+
+    private void redrawGame() {
+        if (currentGame == null) {
+            System.out.println("No game loaded yet.");
+            return;
+        }
+
+        if (currentPerspective == null) {
+            currentPerspective = ChessGame.TeamColor.WHITE;
+        }
+
+        System.out.println(BoardDrawer.drawBoard(currentGame.game().getBoard(), currentPerspective));
+    }
+
+    private void leaveGame() {
+        if (webSocket == null || currentGameID == null) {
+            clearGameState();
+            System.out.println("Left game.");
+            return;
+        }
+
+        try {
+            webSocket.leave(authToken, currentGameID);
+            webSocket.close();
+            clearGameState();
+            System.out.println("Left game.");
+        } catch (ResponseException ex) {
+            System.out.println(ex.getMessage());
+        }
+    }
+
+    private void clearGameState() {
+        webSocket = null;
+        currentGame = null;
+        currentGameID = null;
+        currentPerspective = null;
+        inGame = false;
+    }
+
+    @Override
+    public void loadGame(GameData game) {
+        currentGame = game;
+
+        if (currentPerspective == null) {
+            currentPerspective = ChessGame.TeamColor.WHITE;
+        }
+
+        System.out.println();
+        System.out.println(BoardDrawer.drawBoard(game.game().getBoard(), currentPerspective));
+    }
+
+    @Override
+    public void showNotification(String message) {
+        System.out.println();
+        System.out.println(message);
+    }
+
+    @Override
+    public void showError(String errorMessage) {
+        System.out.println();
+        System.out.println(errorMessage);
+    }
+
     private String prompt() {
-        if (loggedIn) {
+        if (inGame) {
+            return "[GAME] >>> ";
+        } else if (loggedIn) {
             return "[LOGGED_IN] >>> ";
         } else {
             return  "[LOGGED_OUT] >>> ";
@@ -250,5 +353,12 @@ public class Repl {
                 """;
     }
 
+    private String gameplayHelp() {
+        return """
+                redraw - the chess board
+                leave - the current game
+                help - with possible commands
+                """;
+    }
 
 }
