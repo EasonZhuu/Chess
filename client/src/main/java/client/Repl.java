@@ -1,6 +1,9 @@
 package client;
 
 import chess.ChessGame;
+import chess.ChessMove;
+import chess.ChessPiece;
+import chess.ChessPosition;
 import model.GameData;
 import ui.BoardDrawer;
 
@@ -20,6 +23,7 @@ public class Repl implements ServerMessageObserver {
     private GameData currentGame;
     private Integer currentGameID;
     private ChessGame.TeamColor currentPerspective;
+    private ChessGame.TeamColor currentPlayerColor;
 
 
     public void run() {
@@ -197,8 +201,10 @@ public class Repl implements ServerMessageObserver {
 
             if (color.equals("BLACK")) {
                 currentPerspective = ChessGame.TeamColor.BLACK;
+                currentPlayerColor = ChessGame.TeamColor.BLACK;
             } else {
                 currentPerspective = ChessGame.TeamColor.WHITE;
+                currentPlayerColor = ChessGame.TeamColor.WHITE;
             }
 
             if (webSocket != null) {
@@ -233,6 +239,7 @@ public class Repl implements ServerMessageObserver {
             GameData game = currentGames.get(gameNumber - 1);
             currentGameID = game.gameID();
             currentPerspective = ChessGame.TeamColor.WHITE;
+            currentPlayerColor = null;
 
             if (webSocket != null) {
                 webSocket.close();
@@ -255,6 +262,8 @@ public class Repl implements ServerMessageObserver {
             redrawGame();
         } else if (command.equalsIgnoreCase("leave")) {
             leaveGame();
+        } else if (command.toLowerCase().startsWith("move ")) {
+            makeMove(command);
         } else {
             System.out.println("Unknown command. Type help to see possible commands.");
         }
@@ -290,11 +299,98 @@ public class Repl implements ServerMessageObserver {
         }
     }
 
+    private void makeMove(String command) {
+        if (currentPlayerColor == null) {
+            System.out.println("Observers cannot make moves.");
+            return;
+        }
+
+        if (webSocket == null || currentGameID == null) {
+            System.out.println("No active game.");
+            return;
+        }
+
+        String[] parts = command.trim().split("\\s+");
+        if (parts.length != 3 && parts.length != 4) {
+            System.out.println("Use: move e2 e4");
+            System.out.println("Promotion example: move e7 e8 queen");
+            return;
+        }
+
+        ChessPosition start = parsePosition(parts[1]);
+        ChessPosition end = parsePosition(parts[2]);
+
+        if (start == null || end == null) {
+            System.out.println("Positions must be like e2 or h7.");
+            return;
+        }
+
+        ChessPiece.PieceType promotionPiece = null;
+        if (parts.length == 4) {
+            promotionPiece = parsePromotionPiece(parts[3]);
+            if (promotionPiece == null) {
+                System.out.println("Promotion must be queen, rook, bishop, or knight.");
+                return;
+            }
+        }
+
+        ChessMove move = new ChessMove(start, end, promotionPiece);
+
+        try {
+            webSocket.makeMove(authToken, currentGameID, move);
+        } catch (ResponseException ex) {
+            System.out.println(ex.getMessage());
+        }
+    }
+
+    private ChessPosition parsePosition(String text) {
+        if (text == null || text.length() != 2) {
+            return null;
+        }
+
+        char file = Character.toLowerCase(text.charAt(0));
+        char rank = text.charAt(1);
+
+        if (file < 'a' || file > 'h') {
+            return null;
+        }
+
+        if (rank < '1' || rank > '8') {
+            return null;
+        }
+
+        int col = file - 'a' + 1;
+        int row = rank - '0';
+
+        return new ChessPosition(row, col);
+    }
+
+    private ChessPiece.PieceType parsePromotionPiece(String text) {
+        if (text.equalsIgnoreCase("queen")) {
+            return ChessPiece.PieceType.QUEEN;
+        }
+
+        if (text.equalsIgnoreCase("rook")) {
+            return ChessPiece.PieceType.ROOK;
+        }
+
+        if (text.equalsIgnoreCase("bishop")) {
+            return ChessPiece.PieceType.BISHOP;
+        }
+
+        if (text.equalsIgnoreCase("knight")) {
+            return ChessPiece.PieceType.KNIGHT;
+        }
+
+        return null;
+    }
+
     private void clearGameState() {
         webSocket = null;
         currentGame = null;
         currentGameID = null;
         currentPerspective = null;
+        currentPlayerColor = null;
         inGame = false;
     }
 
@@ -356,6 +452,8 @@ public class Repl implements ServerMessageObserver {
     private String gameplayHelp() {
         return """
                 redraw - the chess board
+                move e2 e4 - to move a piece
+                move e7 e8 queen - to move with promotion
                 leave - the current game
                 help - with possible commands
                 """;
