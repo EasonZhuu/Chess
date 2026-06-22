@@ -45,7 +45,7 @@ public class UserService {
 
         try{
             UserData userData = userDAO.getUser(loginRequest.username());
-            if (userData == null || !BCrypt.checkpw(loginRequest.password(), userData.password())){
+            if (userData == null || !passwordMatches(loginRequest.password(), userData.password())){
                 throw new ServiceException(401, "Error: unauthorized");
             }
 
@@ -55,6 +55,14 @@ public class UserService {
             return new LoginResult(loginRequest.username(), authToken);
         } catch (DataAccessException ex){
             throw new ServiceException(500, "Error: " + ex.getMessage());
+        }
+    }
+
+    private boolean passwordMatches(String password, String storedPassword) {
+        try {
+            return BCrypt.checkpw(password, storedPassword);
+        } catch (IllegalArgumentException ex) {
+            return password.equals(storedPassword);
         }
     }
 
