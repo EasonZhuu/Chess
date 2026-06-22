@@ -266,6 +266,8 @@ public class Repl implements ServerMessageObserver {
             makeMove(command);
         } else if (command.equalsIgnoreCase("resign")) {
             resignGame();
+        } else if (command.toLowerCase().startsWith("highlight ")) {
+            highlightMoves(command);
         } else {
             System.out.println("Unknown command. Type help to see possible commands.");
         }
@@ -413,6 +415,51 @@ public class Repl implements ServerMessageObserver {
         }
     }
 
+    private void highlightMoves(String command) {
+        if (currentGame == null) {
+            System.out.println("No game loaded yet.");
+            return;
+        }
+
+        String[] parts = command.trim().split("\\s+");
+        if (parts.length != 2) {
+            System.out.println("Use: highlight e2");
+            return;
+        }
+
+        ChessPosition selectedPosition = parsePosition(parts[1]);
+        if (selectedPosition == null) {
+            System.out.println("Position must be like e2 or h7.");
+            return;
+        }
+
+        ChessPiece selectedPiece = currentGame.game().getBoard().getPiece(selectedPosition);
+        if (selectedPiece == null) {
+            System.out.println("No piece at that position.");
+            return;
+        }
+
+        Collection<ChessMove> validMoves = currentGame.game().validMoves(selectedPosition);
+        ArrayList<ChessPosition> highlightedPositions = new ArrayList<>();
+
+        if (validMoves != null) {
+            for (ChessMove move : validMoves) {
+                highlightedPositions.add(move.getEndPosition());
+            }
+        }
+
+        if (currentPerspective == null) {
+            currentPerspective = ChessGame.TeamColor.WHITE;
+        }
+
+        System.out.println(BoardDrawer.drawBoard(
+                currentGame.game().getBoard(),
+                currentPerspective,
+                selectedPosition,
+                highlightedPositions
+        ));
+    }
+
     private void clearGameState() {
         webSocket = null;
         currentGame = null;
@@ -483,6 +530,7 @@ public class Repl implements ServerMessageObserver {
                 move e2 e4 - to move a piece
                 move e7 e8 queen - to move with promotion
                 resign - forfeit the game
+                highlight e2 - show legal moves for a piece
                 leave - the current game
                 help - with possible commands
                 """;
