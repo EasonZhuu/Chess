@@ -7,7 +7,11 @@ import java.sql.SQLException;
 public class MySqlAuthDAO implements AuthDAO{
     @Override
     public void createAuth(AuthData authData) throws DataAccessException {
-        if (authData == null || authData.authToken() == null || authData.username() == null || authData.authToken().isBlank() || authData.username().isBlank()){
+        if (authData == null
+                || authData.authToken() == null
+                || authData.username() == null
+                || authData.authToken().isBlank()
+                || authData.username().isBlank()){
             throw new DataAccessException("Error: bad request");
         }
 

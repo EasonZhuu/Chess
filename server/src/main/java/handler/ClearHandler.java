@@ -4,8 +4,8 @@ import java.util.Map;
 
 import io.javalin.http.Context;
 import server.ErrorResponse;
-import service.ClearService;
 import service.ServiceException;
+import service.clear.ClearService;
 
 public class ClearHandler {
     private final ClearService clearService;

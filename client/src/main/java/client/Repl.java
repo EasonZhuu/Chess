@@ -321,8 +321,8 @@ public class Repl implements ServerMessageObserver {
             return;
         }
 
-        ChessPosition start = parsePosition(parts[1]);
-        ChessPosition end = parsePosition(parts[2]);
+        ChessPosition start = ChessInputParser.parsePosition(parts[1]);
+        ChessPosition end = ChessInputParser.parsePosition(parts[2]);
 
         if (start == null || end == null) {
             System.out.println("Positions must be like e2 or h7.");
@@ -331,7 +331,7 @@ public class Repl implements ServerMessageObserver {
 
         ChessPiece.PieceType promotionPiece = null;
         if (parts.length == 4) {
-            promotionPiece = parsePromotionPiece(parts[3]);
+            promotionPiece = ChessInputParser.parsePromotionPiece(parts[3]);
             if (promotionPiece == null) {
                 System.out.println("Promotion must be queen, rook, bishop, or knight.");
                 return;
@@ -345,48 +345,6 @@ public class Repl implements ServerMessageObserver {
         } catch (ResponseException ex) {
             System.out.println(ex.getMessage());
         }
-    }
-
-    private ChessPosition parsePosition(String text) {
-        if (text == null || text.length() != 2) {
-            return null;
-        }
-
-        char file = Character.toLowerCase(text.charAt(0));
-        char rank = text.charAt(1);
-
-        if (file < 'a' || file > 'h') {
-            return null;
-        }
-
-        if (rank < '1' || rank > '8') {
-            return null;
-        }
-
-        int col = file - 'a' + 1;
-        int row = rank - '0';
-
-        return new ChessPosition(row, col);
-    }
-
-    private ChessPiece.PieceType parsePromotionPiece(String text) {
-        if (text.equalsIgnoreCase("queen")) {
-            return ChessPiece.PieceType.QUEEN;
-        }
-
-        if (text.equalsIgnoreCase("rook")) {
-            return ChessPiece.PieceType.ROOK;
-        }
-
-        if (text.equalsIgnoreCase("bishop")) {
-            return ChessPiece.PieceType.BISHOP;
-        }
-
-        if (text.equalsIgnoreCase("knight")) {
-            return ChessPiece.PieceType.KNIGHT;
-        }
-
-        return null;
     }
 
     private void resignGame() {
@@ -427,7 +385,7 @@ public class Repl implements ServerMessageObserver {
             return;
         }
 
-        ChessPosition selectedPosition = parsePosition(parts[1]);
+        ChessPosition selectedPosition = ChessInputParser.parsePosition(parts[1]);
         if (selectedPosition == null) {
             System.out.println("Position must be like e2 or h7.");
             return;

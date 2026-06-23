@@ -39,7 +39,11 @@ public class UserService {
     }
 
     public LoginResult login(LoginRequest loginRequest) throws ServiceException{
-        if (loginRequest == null || loginRequest.username() == null || loginRequest.password() == null || loginRequest.username().isBlank() || loginRequest.password().isBlank()){
+        if (loginRequest == null
+                || loginRequest.username() == null
+                || loginRequest.password() == null
+                || loginRequest.username().isBlank()
+                || loginRequest.password().isBlank()){
             throw new ServiceException(400, "Error: bad request");
         }
 

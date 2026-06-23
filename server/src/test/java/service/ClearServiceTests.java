@@ -13,6 +13,7 @@ import model.UserData;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import service.clear.ClearService;
 
 public class ClearServiceTests {
     private UserDAO userDAO;

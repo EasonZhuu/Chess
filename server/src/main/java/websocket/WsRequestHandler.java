@@ -74,33 +74,13 @@ public class WsRequestHandler implements WsConnectHandler, WsMessageHandler, WsC
     }
 
     private void connect(UserGameCommand command, Session session) throws IOException {
-        if (command.getGameID() == null) {
-            sendError(session, "Error: missing game ID");
+        WsGameContext context = loadGameContext(command, session, "connect to game");
+        if (context == null) {
             return;
         }
 
-        AuthData authData;
-        GameData gameData;
-
-        try {
-            authData = authDAO.getAuth(command.getAuthToken());
-            gameData = gameDAO.getGame(command.getGameID());
-        } catch (DataAccessException ex) {
-            sendError(session, "Error: unable to connect to game");
-            return;
-        }
-
-        if (authData == null) {
-            sendError(session, "Error: invalid auth token");
-            return;
-        }
-
-        if (gameData == null) {
-            sendError(session, "Error: invalid game ID");
-            return;
-        }
-
-        String username = authData.username();
+        GameData gameData = context.gameData();
+        String username = context.authData().username();
         String role = "observer";
 
         if (username.equals(gameData.whiteUsername())) {
@@ -124,38 +104,19 @@ public class WsRequestHandler implements WsConnectHandler, WsMessageHandler, WsC
     }
 
     private void makeMove(MakeMoveCommand command, Session session) throws IOException {
-        if (command.getGameID() == null) {
-            sendError(session, "Error: missing game ID");
-            return;
-        }
-
         ChessMove move = command.getMove();
         if (move == null) {
             sendError(session, "Error: missing move");
             return;
         }
 
-        AuthData authData;
-        GameData gameData;
-
-        try {
-            authData = authDAO.getAuth(command.getAuthToken());
-            gameData = gameDAO.getGame(command.getGameID());
-        } catch (DataAccessException ex) {
-            sendError(session, "Error: unable to make move");
+        WsGameContext context = loadGameContext(command, session, "make move");
+        if (context == null) {
             return;
         }
 
-        if (authData == null) {
-            sendError(session, "Error: invalid auth token");
-            return;
-        }
-
-        if (gameData == null) {
-            sendError(session, "Error: invalid game ID");
-            return;
-        }
-
+        AuthData authData = context.authData();
+        GameData gameData = context.gameData();
         ChessGame game = gameData.game();
 
         if (game.isGameOver()) {
@@ -205,8 +166,7 @@ public class WsRequestHandler implements WsConnectHandler, WsMessageHandler, WsC
         } else if (game.isInStalemate(nextPlayer)) {
             game.setGameOver(true);
             extraNotification = checkedUsername + " is in stalemate";
-        } else if (game.isInCheck(nextPlayer))
-        {
+        } else if (game.isInCheck(nextPlayer)) {
             extraNotification = checkedUsername + " is in check";
         }
 
@@ -224,7 +184,7 @@ public class WsRequestHandler implements WsConnectHandler, WsMessageHandler, WsC
 
         if (extraNotification != null) {
             connections.broadcast(command.getGameID(), new NotificationMessage(extraNotification));
-         }
+        }
     }
 
     private ChessGame.TeamColor getPlayerColor(String username, GameData gameData){
@@ -259,33 +219,13 @@ public class WsRequestHandler implements WsConnectHandler, WsMessageHandler, WsC
     }
 
     private void leave(UserGameCommand command, Session session) throws IOException {
-        if (command.getGameID() == null) {
-            sendError(session, "Error: missing game ID");
+        WsGameContext context = loadGameContext(command, session, "leave game");
+        if (context == null) {
             return;
         }
 
-        AuthData authData;
-        GameData gameData;
-
-        try {
-            authData = authDAO.getAuth(command.getAuthToken());
-            gameData = gameDAO.getGame(command.getGameID());
-        } catch (DataAccessException ex) {
-            sendError(session, "Error: unable to leave game");
-            return;
-        }
-
-        if (authData == null) {
-            sendError(session, "Error: invalid auth token");
-            return;
-        }
-
-        if (gameData == null) {
-            sendError(session, "Error: invalid game ID");
-            return;
-        }
-
-        String username = authData.username();
+        GameData gameData = context.gameData();
+        String username = context.authData().username();
         GameData updatedGameData = gameData;
 
         if (username.equals(gameData.whiteUsername())) {
@@ -322,33 +262,13 @@ public class WsRequestHandler implements WsConnectHandler, WsMessageHandler, WsC
     }
 
     private void resign(UserGameCommand command, Session session) throws IOException {
-        if (command.getGameID() == null) {
-            sendError(session, "Error: missing game ID");
+        WsGameContext context = loadGameContext(command, session, "resign");
+        if (context == null) {
             return;
         }
 
-
-        AuthData authData;
-        GameData gameData;
-
-        try {
-            authData = authDAO.getAuth(command.getAuthToken());
-            gameData = gameDAO.getGame(command.getGameID());
-        } catch (DataAccessException ex) {
-            sendError(session, "Error: unable to resign");
-            return;
-        }
-
-        if (authData == null) {
-            sendError(session, "Error: invalid auth token");
-            return;
-        }
-
-        if (gameData == null) {
-            sendError(session, "Error: invalid game ID");
-            return;
-        }
-
+        AuthData authData = context.authData();
+        GameData gameData = context.gameData();
         ChessGame game = gameData.game();
 
         if (game.isGameOver()) {
@@ -374,6 +294,40 @@ public class WsRequestHandler implements WsConnectHandler, WsMessageHandler, WsC
         }
 
         connections.broadcast(command.getGameID(), new NotificationMessage(username + " resigned"));
+    }
+
+    private WsGameContext loadGameContext(UserGameCommand command, Session session,
+                                          String action) throws IOException {
+        if (command.getGameID() == null) {
+            sendError(session, "Error: missing game ID");
+            return null;
+        }
+
+        AuthData authData;
+        GameData gameData;
+
+        try {
+            authData = authDAO.getAuth(command.getAuthToken());
+            gameData = gameDAO.getGame(command.getGameID());
+        } catch (DataAccessException ex) {
+            sendError(session, "Error: unable to " + action);
+            return null;
+        }
+
+        if (authData == null) {
+            sendError(session, "Error: invalid auth token");
+            return null;
+        }
+
+        if (gameData == null) {
+            sendError(session, "Error: invalid game ID");
+            return null;
+        }
+
+        return new WsGameContext(authData, gameData);
+    }
+
+    private record WsGameContext(AuthData authData, GameData gameData) {
     }
 
     private void sendError(Session session, String errorMessage) {

@@ -8,7 +8,13 @@ public class MySqlUserDAO implements UserDAO{
 
     @Override
     public void createUser(UserData user) throws DataAccessException {
-        if (user == null || user.username() == null || user.password() == null || user.email() == null || user.username().isBlank() || user.password().isBlank() || user.email().isBlank()){
+        if (user == null
+                || user.username() == null
+                || user.password() == null
+                || user.email() == null
+                || user.username().isBlank()
+                || user.password().isBlank()
+                || user.email().isBlank()){
             throw new DataAccessException("Error: bad request");
         }
 

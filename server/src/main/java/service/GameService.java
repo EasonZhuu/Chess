@@ -15,7 +15,11 @@ public class GameService {
     }
 
     public CreateGameResult createGame(CreateGameRequest request)throws ServiceException{
-        if (request == null || request.authToken() == null || request.authToken().isBlank() || request.gameName() == null || request.gameName().isBlank()){
+        if (request == null
+                || request.authToken() == null
+                || request.authToken().isBlank()
+                || request.gameName() == null
+                || request.gameName().isBlank()){
             throw new ServiceException(400, "Error: bad request");
         }
 
@@ -48,7 +52,12 @@ public class GameService {
     }
 
     public JoinGameResult joinGame(JoinGameRequest request) throws ServiceException{
-        if (request == null || request.authToken() == null || request.authToken().isBlank() || request.playerColor() == null || request.playerColor().isBlank() || request.gameID() == null) {
+        if (request == null
+                || request.authToken() == null
+                || request.authToken().isBlank()
+                || request.playerColor() == null
+                || request.playerColor().isBlank()
+                || request.gameID() == null) {
             throw new ServiceException(400, "Error: bad request");
         }
 
@@ -71,13 +80,23 @@ public class GameService {
                 if (game.whiteUsername() != null){
                     throw new ServiceException(403, "Error: already taken");
                 }
-                gameDAO.updateGame(new GameData(game.gameID(),authDAO.getAuth(request.authToken()).username(), game.blackUsername(),game.gameName(),game.game()));
+                gameDAO.updateGame(new GameData(
+                        game.gameID(),
+                        authDAO.getAuth(request.authToken()).username(),
+                        game.blackUsername(),
+                        game.gameName(),
+                        game.game()));
             } else {
                 if (color.equals("BLACK")) {
                     if (game.blackUsername() != null) {
                         throw new ServiceException(403, "Error: already taken");
                     }
-                    gameDAO.updateGame(new GameData(game.gameID(), game.whiteUsername(), authDAO.getAuth(request.authToken()).username(), game.gameName(), game.game()));
+                    gameDAO.updateGame(new GameData(
+                            game.gameID(),
+                            game.whiteUsername(),
+                            authDAO.getAuth(request.authToken()).username(),
+                            game.gameName(),
+                            game.game()));
                 }
             }
             return new JoinGameResult();

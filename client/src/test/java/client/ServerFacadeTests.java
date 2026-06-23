@@ -27,7 +27,7 @@ public class ServerFacadeTests {
     }
 
     @Test
-    public void ServerFacadeStarts() {
+    public void serverFacadeStarts() {
         Assertions.assertNotNull(facade);
     }
 
